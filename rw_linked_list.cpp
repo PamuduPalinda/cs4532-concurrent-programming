@@ -5,7 +5,7 @@
 #include <math.h>
 #include <pthread.h>
 
-#define MAX_THREADS 2 // Maximum number of threads you want to support
+#define MAX_THREADS 8 // Maximum number of threads you want to support
 
 // Define the Node structure
 typedef struct Node {
@@ -76,9 +76,8 @@ void PrintList() {
     pthread_rwlock_unlock(&rwlock); // Release the read lock
 }
 
-unsigned long rwlock_run(int case_num) {
-    int n = 1000;  // Number of unique values to populate the linked list
-    int m = 10;   // Total number of random Member, Insert, and Delete operations
+int rwlock_run(int case_num) {
+    int m = 10000;   // Total number of random Member, Insert, and Delete operations
 
     float mMember;
     float mInsert;
@@ -119,22 +118,6 @@ unsigned long rwlock_run(int case_num) {
     int Ins = (int)(m * mInsert);
     int Del= (int)( m * mDelete);
 
-
-
-
-    // Populate the linked list with n random, unique values
-    for (int i = 0; i < n; i++) {
-        int randomValue;
-        do {
-            randomValue = rand() % (1 << 16);  // Generate a random value between 0 and 2^16 - 1
-        } while (Member(randomValue));  // Ensure uniqueness
-        Insert(randomValue);
-    }
-
-    struct timeval stop;
-    struct timeval start;
-    gettimeofday(&start, NULL); 
-
     // Perform random Member, Insert, and Delete operations
     for (int i = 0; i < m; i++) {
         float random = (float)rand() / RAND_MAX;  // Generate a random float between 0 and 1
@@ -160,11 +143,7 @@ unsigned long rwlock_run(int case_num) {
             }
         }
     }
-    // Calculate the elapsed time in milliseconds and store it in the array
-    gettimeofday(&stop, NULL);
-    unsigned long time;
-    time = (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec;
-    return time;
+    return 0;
 }
 
 
@@ -188,6 +167,16 @@ int main(int argc, char* argv[]) {
 
     pthread_rwlock_init(&rwlock, NULL);
     srand(time(NULL));  // Seed the random number generator with the current time
+    int n = 1000;  // Number of unique values to populate the linked list
+
+    // Populate the linked list with n random, unique values
+    for (int i = 0; i < n; i++) {
+        int randomValue;
+        do {
+            randomValue = rand() % (1 << 16);  // Generate a random value between 0 and 2^16 - 1
+        } while (Member(randomValue));  // Ensure uniqueness
+        Insert(randomValue);
+    }
 
     int numRuns = 385;  // Number of times to run the program
     // Array to store operation times
@@ -197,7 +186,9 @@ int main(int argc, char* argv[]) {
 
     for (int run = 0; run < numRuns; run++) {
         int case_num = 1; // You can change this to the desired case number
-        operationTimes[run] = 0;
+        struct timeval stop;
+        struct timeval start;
+        gettimeofday(&start, NULL);
 
         for (int i = 0; i < numThreads; i++) {
             pthread_create(&threads[i], NULL, thread_function, &case_num);
@@ -206,6 +197,12 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < numThreads; i++) {
             pthread_join(threads[i], NULL);
         }
+        // Calculate the elapsed time in milliseconds and store it in the array
+        gettimeofday(&stop, NULL);
+        unsigned long time;
+        time = (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec;
+        operationTimes[run]=time;
+        sum+=operationTimes[run];
         printf("Iteration number %d finished\n", run + 1);
     }
 

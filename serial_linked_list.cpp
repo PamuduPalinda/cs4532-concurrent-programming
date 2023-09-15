@@ -64,7 +64,7 @@ void PrintList() {
 
 unsigned long serial_run(int case_num) {
     int n = 1000;  // Number of unique values to populate the linked list
-    int m = 10;   // Total number of random Member, Insert, and Delete operations
+    int m = 10000;   // Total number of random Member, Insert, and Delete operations
 
     float mMember;
     float mInsert;
@@ -163,7 +163,7 @@ int main() {
     for (int run = 0; run < numRuns; run++) {
         
         //case 1
-        int case_num=1;
+        int case_num=3;
         unsigned long time_taken=serial_run(case_num);
         operationTimes[run]=time_taken;
         sum+=time_taken;
