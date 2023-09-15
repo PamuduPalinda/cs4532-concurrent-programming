@@ -15,36 +15,36 @@ typedef struct Node {
 
 // Initialize the head of the linked list
 Node* head = NULL;
-pthread_mutex_t mutex;
+pthread_rwlock_t rwlock;
 
 // Function to check if an element is present in the linked list (Member)
 int Member(int value) {
-    pthread_mutex_lock(&mutex);
+    pthread_rwlock_rdlock(&rwlock); // Acquire a read lock
     Node* current = head;
     while (current != NULL) {
         if (current->data == value) {
-            pthread_mutex_unlock(&mutex);
+            pthread_rwlock_unlock(&rwlock); // Release the read lock
             return 1;  // Found the element
         }
         current = current->next;
     }
-    pthread_mutex_unlock(&mutex);
+    pthread_rwlock_unlock(&rwlock); // Release the read lock
     return 0;  // Element not found
 }
 
 // Function to insert an element at the beginning of the linked list (Insert)
 void Insert(int value) {
-    pthread_mutex_lock(&mutex);
+    pthread_rwlock_wrlock(&rwlock); // Acquire a write lock
     Node* newNode = (Node*)malloc(sizeof(Node));
     newNode->data = value;
     newNode->next = head;
     head = newNode;
-    pthread_mutex_unlock(&mutex);
+    pthread_rwlock_unlock(&rwlock); // Release the write lock
 }
 
 // Function to delete an element from the linked list (Delete)
 void Delete(int value) {
-    pthread_mutex_lock(&mutex);
+    pthread_rwlock_wrlock(&rwlock); // Acquire a write lock
     Node* current = head;
     Node* prev = NULL;
     while (current != NULL) {
@@ -55,28 +55,28 @@ void Delete(int value) {
                 head = current->next;
             }
             free(current);
-            pthread_mutex_unlock(&mutex);
+            pthread_rwlock_unlock(&rwlock); // Release the write lock
             return;  // Element deleted
         }
         prev = current;
         current = current->next;
     }
-    pthread_mutex_unlock(&mutex);
+    pthread_rwlock_unlock(&rwlock); // Release the write lock
 }
 
 // Function to print the elements in the linked list
 void PrintList() {
-    pthread_mutex_lock(&mutex);
+    pthread_rwlock_rdlock(&rwlock); // Acquire a read lock
     Node* current = head;
     while (current != NULL) {
         printf("%d -> ", current->data);
         current = current->next;
     }
     printf("NULL\n");
-    pthread_mutex_unlock(&mutex);
+    pthread_rwlock_unlock(&rwlock); // Release the read lock
 }
 
-unsigned long mutex_run(int case_num) {
+unsigned long rwlock_run(int case_num) {
     int n = 1000;  // Number of unique values to populate the linked list
     int m = 10;   // Total number of random Member, Insert, and Delete operations
 
@@ -167,9 +167,10 @@ unsigned long mutex_run(int case_num) {
     return time;
 }
 
+
 void* thread_function(void* arg) {
     int case_num = *((int*)arg);
-    mutex_run(case_num);
+    rwlock_run(case_num);
     return NULL;
 }
 
@@ -185,7 +186,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    pthread_mutex_init(&mutex, NULL);
+    pthread_rwlock_init(&rwlock, NULL);
     srand(time(NULL));  // Seed the random number generator with the current time
 
     int numRuns = 385;  // Number of times to run the program
@@ -221,6 +222,6 @@ int main(int argc, char* argv[]) {
     printf("Mean time: %lu\n", mean);
     printf("Standard Deviation: %lu\n", std_deviation);
 
-    pthread_mutex_destroy(&mutex);
+    pthread_rwlock_destroy(&rwlock);
     return 0;
 }
